@@ -1,0 +1,18 @@
+1
+test soal 1
+A
+B
+C
+A
+2
+test soal 2 
+A 
+B
+C
+B
+3
+test soal 3
+A
+B
+C
+C
