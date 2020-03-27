@@ -6,7 +6,7 @@ def validate():
     if(not(username.strip() and password.strip())):
         return False
     else:
-        return True
+        if((username=='Admin' or username=='admin') and (password=='Admin' or password=='admin'))
         
 adminSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 adminSocket.connect((HOST,PORTSERVER))
@@ -16,28 +16,18 @@ password = input("Password : ")
 
 print("Validating the username and password..")
 if(validate()):
-    paketSoal = input("silahkan masukkan paket soal yang akan digunakan : (contoh input : paketSoal.txt)")
+    paketSoal = input("silahkan masukkan paket soal yang akan digunakan : (contoh input : 1 untuk paket satu)")
     jumlahSoal = int(input("jumlah soal : "))
     
-    current_line=0
-    fileSoal = open(paketSoal, 'r')
-    while(jumlahSoal>0):
-        nomorSoal = fileSoal.readline()
-        Soal = fileSoal.readline()
-        A = fileSoal.readline()
-        B = fileSoal.readline()
-        C = fileSoal.readline()
-        Jawaban = fileSoal.readline()
-
-        adminSocket.sendto(nomorSoal.encode(),(HOST,PORTSERVER))
-        adminSocket.sendto(Soal.encode(),(HOST,PORTSERVER))
-        adminSocket.sendto(A.encode(),(HOST,PORTSERVER))
-        adminSocket.sendto(B.encode(),(HOST,PORTSERVER))
-        adminSocket.sendto(C.encode(),(HOST,PORTSERVER))
-        adminSocket.sendto(Jawaban.encode(),(HOST,PORTSERVER))
-
-        current_line=current_line+6
-        jumlahSoal=jumlahSoal-1
+	if(paketSoal==1):
+		fileSoal = open('paketSatu.txt', 'r')
+		jawaban = open('jawabanPaketSatu.txt','r')
+		
+	Soal = fileSoal.readlines()
+	Jawaban = jawaban.readlines()
+	
+	adminSocket.send(Soal)
+    adminSocket.sendto(Jawaban)
 
     
     
