@@ -1,3 +1,0 @@
-test soal 1 A.satu B.Dua C.Tiga
-test soal 2 A.satu B.Dua C.Tiga
-test soal 3 A.satu B.Dua C.Tiga

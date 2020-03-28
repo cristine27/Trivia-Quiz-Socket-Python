@@ -1,102 +1,127 @@
+#!/usr/bin/env python
 import socket
 import threading
 import sys
 import time
+import datetime
 
-serverPort = 27019
-serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serverSocket.bind(("",serverPort))
-serverSocket.listen(3)
+HOST = 'localhost'
+PORT = int(input("input port yang akan digunakan : "))
 
-waktu = [0,0] #waktu default 0 untuk kedua peserta
-isDone = False #boloen untuk flag apakah quiz sudah selesai atau belum
+score = [0, 0] #quiz akan di ikuti oleh 2 peserta
 
-def pertanyaan(pesertaList,idPeserta,pertanyaan,jawaban):
-    global score
-    global time
-    global isDone
-    
+totalQuestions = int(input("jumlah pertanyaan : "))
+filename = input("Masukkan nama file : ")
+t = [0, 0] #waktu delta kedua peserta
+f = open(filename, 'r')
+isDone = False
+
+def askQuestion(connlist, playerNo, ques, ans):    
+    connlist[playerNo].send(ques.encode())          #sendall question
     time.sleep(0.1)
-    pesertaList[idPeserta].sendall(pertanyaan+"\n") #mengirim pertanyaan ke semua
-    time.sleep(0.1)
-    jawabanpeserta = pesertaList[idPeserta].recv(1024)
-    waktu[idPeserta] = datetime.datetime.now()
 
-    if(not isDone) and (jawaban == jawabanpeserta):
-        score[idPeserta]+=10
-        isDone = not isDone
-        pesertaList[idPeserta].sendall("Benar!\n")
-        time.sleep(0.1)
-    else:
-        if(jawaban == jawabanpeserta):
-            pesertaList[idPeserta].sendall("Maaf Kamu Terlambat :( \n")
+
+    data = connlist[playerNo].recv(1024)                    #receive answer
+    data = data.decode()
+
+    t[playerNo] = datetime.datetime.now()
+    if (str(ans) == str(data)):
+        if(not isDone):
+            score[playerNo]+=10
+            isDone = not isDone
+            connlist[playerNo].send(("Correct Answer").encode())
             time.sleep(0.1)
         else:
-            pesertaList[idPeserta].sendall("Jawaban kamu salah!\n")
+            connlist[playerNo].send(("Too late!").encode())
             time.sleep(0.1)
-            score[idPeserta]=0
+    else:
+        connlist[playerNo].send(("Incorrect Answer").encode())
+        time.sleep(0.1)
+        score[playerNo]-=10
 
 
-while 1:
-	peserta1, addr = serverSocket.accept()
-	print("Peserta pertama bergabung dengan id ",addr)
-	peserta2, addr = serverSocket.accept()
-	print("Peserta kedua bergabung dengan id ",addr)
+def sendallScore(connlist):
+    global score
+    for i, conn in enumerate(connlist):
+        conn.send("S".encode())
+        time.sleep(0.1)
+        conn.send("Player "+str(i+1)+", your score is: "+str(score[i])+"\n")
+        time.sleep(0.1)
 
-	pesertaList = [peserta1,peserta2]
-	time.sleep(0.1)
-	peserta1.sendall("Kamu adalah peserta 1")
+        
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind((HOST, PORT))
+s.listen(2)
+print ("Server bound to ", HOST, ":", PORT, "\nConnect both players before continuing...")
+(peserta1, addr) = s.accept()
+print ("Connected to Player 1 at ", addr)
+(peserta2, addr) = s.accept()
+connlist = [peserta1, peserta2]
 
-	time.sleep(0.1)
-	peserta2.sendall("Kamu adalah peserta 2")
-	
-	admin, addr = serverSocket.accept()
-	soal = serverSocket.recv()
-	Jawaban,clientAddr = serverSocket.recv()
-   
-	jumlah = 0
-	isDone = False
-	while(jumlah < 3):
-		peserta1Thread = threading.Thread(target = pertanyaan,name="Thread1", args = (pesertaList, 0, soal[jumlah],Jawaban[jumlah],))
-		peserta2Thread = threading.Thread(target = pertanyaan,name="Thread2", args = (pesertaList, 1, soal[jumlah],Jawaban[jumlah],))
-		#start thread
-		peserta1Thread.start()
-		peserta2Thread.start()
-		#join to main thread
-		peserta1Thread.join()
-		peserta2Thread.join()
-		jumlah-=1
+time.sleep(0.1)
+peserta1.send("I".encode())
+time.sleep(0.1)
+peserta1.send("You are Player 1".encode())
+time.sleep(0.1)
+peserta2.send("I".encode())
+time.sleep(0.1)
+peserta2.send("You are Player 2".encode())
+time.sleep(0.1)
+print ("Connected to Player 2 at ", addr)
+
+for questionNo in range(totalQuestions):
+    # Soal = "Question Number " + str(questionNo+1)
+    # peserta1.send(Soal.encode())
+    # time.sleep()
+    # peserta2.send(Soal.encode())
+    # time.sleep()
+
+    ques = f.readline()
+    ans = f.readline()
+    isDone = False
+
+    peserta1.send("Q".encode())
+    time.sleep(0.1)
+    peserta2.send("Q".encode())
+    time.sleep(0.1)
     
+    playerThread1 = threading.Thread(target = askQuestion, name = "Thread1", args = (connlist, 0, ques, ans,))
+    playerThread2 = threading.Thread(target = askQuestion, name = "Thread2", args = (connlist, 1, ques, ans,))
+    playerThread1.start()
+    playerThread2.start()
+    playerThread1.join()
+    playerThread2.join()
+    # TODO Buzzer Round Implementation using threading, threading not required for current task
+    sendallScore(connlist)
 if score[0]>score[1]:
-    print ("Peserta 1 menang, dengan score: ", score)
-    conn1.sendall("X\n")
+    print ("Player 1 won, with score: ", score)
+    peserta1.send("X\n".encode())
     time.sleep(0.1)
-    conn1.sendall("kamu menang\n")
+    peserta1.send("YOU WON\n".encode())
     time.sleep(0.1)
-    conn2.sendall("X\n")
+    peserta2.send("X\n".encode())
     time.sleep(0.1)
-    conn2.sendall("kamu kalah\n")
+    peserta2.send("YOU LOST\n".encode())
     time.sleep(0.1)
 elif score[0]<score[1]:
-    print ("Peserta 2 menang, dengan score: ", score)
-    conn2.sendall("X\n")
+    print ("Player 2 won, with score: ", score)
+    peserta2.send("X\n".encode())
     time.sleep(0.1)
-    conn2.sendall("kamu menang\n")
+    peserta2.send("YOU WON\n".encode())
     time.sleep(0.1)
-    conn1.sendall("X\n")
+    peserta1.send("X\n".encode())
     time.sleep(0.1)
-    conn1.sendall("kamu kalah\n")
+    peserta1.send("YOU LOST\n".encode())
     time.sleep(0.1)
 else:
-    print ("Kalian seri, dengan score: ", score)
-    conn1.sendall("X\n")
+    print ("It's a tie, with score: ", score)
+    peserta1.send("X\n".encode())
     time.sleep(0.1)
-    conn1.sendall("seri\n")
+    peserta1.send("IT'S A TIE\n".encode())
     time.sleep(0.1)
-    conn2.sendall("X\n")
+    peserta2.send("X\n".encode())
     time.sleep(0.1)
-    conn2.sendall("seri\n")
+    peserta2.send("IT'S A TIE\n".encode())
     time.sleep(0.1)
-    
-    
-		
+s.close()

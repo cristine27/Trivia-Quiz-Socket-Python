@@ -1,37 +1,44 @@
 import socket
-HOST = 'localhost'
-PORTSERVER = 27019
+import sys
 
-def pertanyaan(s):
-    soal = s.recv(1024)
-    print(soal)
+def intros(s):
+    res = s.recv(1024).decode()
+    print(res)
 
-    jawaban = input("Jawaban : ")
-    while jawaban not in ['A','B','C']:
-        print("Tidak ada pilihan jawaban tersebut")
-        jawaban = input("Jawaban : ")
-    clientSocket.sendall(jawaban)
+def question(s):
+    ques = s.recv(1024).decode()
+    print(ques)
+    ans = input("Answer: ")
+    while ans not in ['A', 'B', 'C', 'D']:
+        print ("Enter a valid choice!")
+        ans = input("Answer: ")
+    s.send(ans.encode())
+    response = s.recv(1024).decode()
+    print(response)
 
-    hasilJawaban = clientSocket.recv(1024)
-    print hasilJawaban
+def scores(s):
+    res = s.recv(1024).decode()
+    print(res)
 
-clientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-clientSocket.connect((HOST,PORTSERVER))
+def final(s):
+    res = s.recv(1024).decode()
+    print(prompt)
+
+HOST = 'localhost'    # The remote host
+PORT = int(input("Enter the port number to which the server is bound: "))
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+
 while True:
-	
-	try:
-		soal = s.recv(1024)
-		print(soal)
-
-		jawaban = input("Jawaban : ")
-		while jawaban not in ['A','B','C']:
-			print("Tidak ada pilihan jawaban tersebut")
-			jawaban = input("Jawaban : ")
-		clientSocket.sendall(jawaban)
-
-		hasilJawaban = clientSocket.recv(1024)
-		print hasilJawaban
-	
-	except:
-		clientSocket.close()
-		exit(0)
+    choice = s.recv(1024).decode()
+    if choice[0] == "I":
+        intros(s)
+    elif choice[0] == "Q":
+        question(s)
+    elif choice[0] == "S":
+        scores(s)
+    elif choice[0] == "X":
+        final(s)
+        break
+    else:
+        print ("Invalid choice: ", choice)
