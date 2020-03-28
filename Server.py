@@ -45,7 +45,8 @@ def sendallScore(connlist):
     for i, conn in enumerate(connlist):
         conn.send("S".encode())
         time.sleep(0.1)
-        conn.send("Player "+str(i+1)+", your score is: "+str(score[i])+"\n")
+        keteranganSkor = "Player " + str(i+1) + " your score is : " + str(score[i])
+        conn.send(keteranganSkor.encode())
         time.sleep(0.1)
 
         
