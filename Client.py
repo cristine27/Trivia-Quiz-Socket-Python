@@ -6,6 +6,8 @@ def intros(s):
     print(res)
 
 def question(s):
+    quesNum = s.recv(1024).decode()
+    print(quesNum)
     ques = s.recv(1024).decode()
     print(ques)
     ans = input("Answer: ")
@@ -22,23 +24,24 @@ def scores(s):
 
 def final(s):
     res = s.recv(1024).decode()
-    print(prompt)
+    print(res)
 
-HOST = 'localhost'    # The remote host
+HOST = 'localhost'   
 PORT = int(input("Enter the port number to which the server is bound: "))
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
 
 while True:
     choice = s.recv(1024).decode()
-    if choice[0] == "I":
+    if choice == "Intro": 
         intros(s)
-    elif choice[0] == "Q":
+    elif choice == "Ques":
         question(s)
-    elif choice[0] == "S":
+    elif choice == "Skor":
         scores(s)
-    elif choice[0] == "X":
+    elif choice == "Final":
         final(s)
         break
     else:
         print ("Invalid choice: ", choice)
+s.close()

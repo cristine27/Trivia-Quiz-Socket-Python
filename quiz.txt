@@ -1,15 +1,15 @@
 Question 1, Choice A B C D
 A
 Question 2, Choice A B C D
-C
+A
 Question 3, Choice A B C D
-D
+A
 Question 4, Choice A B C D
-B
+A
 Question 5, Choice A B C D
 A
 Question 6, Choice A B C D
-B
+A
 Question 7, Choice A B C D
 A
 Question 8, Choice A B C D
