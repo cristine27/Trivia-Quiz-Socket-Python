@@ -15,19 +15,18 @@ filename = input("Masukkan nama file : ")
 t = [0, 0] #waktu delta kedua peserta
 f = open(filename, 'r')
 
+flag = [False] * totalQuestions #menandakan apakah suatu pertanyan sudah berhasil dijawab
 
-def askQuestion(pesertaList, playerNo, ques, ans):    
+def askQuestion(pesertaList, playerNo, ques, ans, questionNo):    
     pesertaList[playerNo].send(ques.encode())          
     time.sleep(0.1)
-    isDone = True
     
     data = pesertaList[playerNo].recv(1024).decode()                    
     t[playerNo] = datetime.datetime.now()
-
-    if ans==data:
-        if isDone:
+    if ans.rstrip()==data:
+        if flag[questionNo]==False:
             score[playerNo]+=10
-            isDone = not isDone
+            flag[questionNo] = True
             pesertaList[playerNo].send(("Correct Answer").encode())
             time.sleep(0.1)
         else:
@@ -102,8 +101,8 @@ for questionNo in range(totalQuestions):
     ques = f.readline()
     ans = f.readline()
     
-    playerThread1 = threading.Thread(target = askQuestion, name = "Thread1", args = (pesertaList, 0, ques, ans,))
-    playerThread2 = threading.Thread(target = askQuestion, name = "Thread2", args = (pesertaList, 1, ques, ans,))
+    playerThread1 = threading.Thread(target = askQuestion, name = "Thread1", args = (pesertaList, 0, ques, ans, questionNo))
+    playerThread2 = threading.Thread(target = askQuestion, name = "Thread2", args = (pesertaList, 1, ques, ans, questionNo))
     playerThread1.start()
     playerThread2.start()
     playerThread1.join()
